@@ -1,10 +1,10 @@
-pub enum Error {
+pub enum LoxError {
     UnexpectedChar { char: char, line: usize },
     ParseError,
 }
-pub fn report_error(e: Error) {
+pub fn report_error(e: LoxError) {
     match e {
-        Error::UnexpectedChar { char, line } => {
+        LoxError::UnexpectedChar { char, line } => {
             eprintln!("[line: {}] Unexpected character {:?} found", line, char);
         }
         _ => {
