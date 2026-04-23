@@ -36,10 +36,12 @@ pub fn run_prompt() {
 }
 fn run(source: String) {
     let mut scanner = Scanner::new(source);
-    if let Err(_) = scanner.scan_tokens() {
-        exit(65);
-    }
-    for token in scanner.tokens {
-        println!("token lexeme: {}", token.to_string())
+    match scanner.scan_tokens() {
+        Ok(tokens) => {
+            for t in tokens {
+                println!("{}", t);
+            }
+        }
+        Err(_) => exit(65),
     }
 }
