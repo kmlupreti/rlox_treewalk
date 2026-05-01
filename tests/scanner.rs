@@ -11,11 +11,7 @@ fn should_skip_comments() {
 *
 ";
     let mut scanner = Scanner::new(String::from(source));
-    let mut tokens = scanner
-        .scan_tokens()
-        .expect("scan tokens failed")
-        .into_iter();
-    println!("tokens: {:?}", tokens);
+    let mut tokens = scanner.scan_tokens().unwrap().into_iter();
     assert_eq!(
         tokens.next().unwrap(),
         &Token::new(TokenType::LeftParen, String::from("("), 2, LiteralType::Nil)
