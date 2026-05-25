@@ -75,6 +75,13 @@ impl Scanner {
             self.current_char()
         }
     }
+    fn peek_next(&self) -> char {
+        if (self.current_index + 1) >= self.source.len() {
+            '\0'
+        } else {
+            self.source[self.current_index + 1]
+        }
+    }
     fn scan_token(&mut self) -> Result<(), LoxError> {
         let c = self.advance();
         match c {
@@ -123,6 +130,22 @@ impl Scanner {
                 let matched_string =
                     String::from_iter(&self.source[self.start + 1..self.current_index - 1]);
                 self.add_token(TokenType::String, LiteralType::String(matched_string));
+            }
+            '0'..='9' => {
+                while self.current_char().is_ascii_digit() {
+                    self.advance();
+                }
+                if self.current_char() == '.' && self.peek_next().is_ascii_digit() {
+                    self.advance(); // consume decimal point
+                    while self.peek().is_ascii_digit() {
+                        self.advance();
+                    }
+                }
+                let matched_number: f64 =
+                    String::from_iter(&self.source[self.start..self.current_index])
+                        .parse()
+                        .unwrap();
+                self.add_token(TokenType::Number, LiteralType::Number(matched_number));
             }
             _ => {
                 self.has_error = true;
