@@ -147,8 +147,13 @@ impl Scanner {
                         .unwrap();
                 self.add_token(TokenType::Number, LiteralType::Number(matched_number));
             }
+            'a'..='z' | 'A'..='Z' | '_' => {
+                while self.peek().is_ascii_alphanumeric() || self.peek() == '_' {
+                    self.advance();
+                }
+                self.add_token(TokenType::Identifier, LiteralType::Nil);
+            }
             _ => {
-                self.has_error = true;
                 return Err(LoxError::UnexpectedChar {
                     char: c,
                     line: self.line,
