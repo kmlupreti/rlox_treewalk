@@ -151,7 +151,28 @@ impl Scanner {
                 while self.peek().is_ascii_alphanumeric() || self.peek() == '_' {
                     self.advance();
                 }
-                self.add_token(TokenType::Identifier, LiteralType::Nil);
+                let text = String::from_iter(&self.source[self.start..=self.current_index - 1]);
+                let token_type = match text.as_str() {
+                    "and" => TokenType::And,
+                    "class" => TokenType::Class,
+                    "else" => TokenType::Else,
+                    "false" => TokenType::False,
+                    "fun" => TokenType::Fun,
+                    "for" => TokenType::For,
+                    "if" => TokenType::If,
+                    "nil" => TokenType::Nil,
+                    "or" => TokenType::Or,
+                    "print" => TokenType::Print,
+                    "return" => TokenType::Return,
+                    "super" => TokenType::Super,
+                    "this" => TokenType::This,
+                    "true" => TokenType::True,
+                    "var" => TokenType::Var,
+                    "while" => TokenType::While,
+                    "eof" => TokenType::Eof,
+                    _ => TokenType::Identifier,
+                };
+                self.add_token(token_type, LiteralType::Nil);
             }
             _ => {
                 return Err(LoxError::UnexpectedChar {
