@@ -164,6 +164,38 @@ impl Scanner {
             '-' => self.add_token(TokenType::Minus, LiteralType::Nil),
 
             '*' => self.add_token(TokenType::Star, LiteralType::Nil),
+            '=' => {
+                let token_type = if self.match_char('=') {
+                    TokenType::EqualEqual
+                } else {
+                    TokenType::Equal
+                };
+                self.add_token(token_type, LiteralType::Nil);
+            }
+            '!' => {
+                let token_type = if self.match_char('=') {
+                    TokenType::BangEqual
+                } else {
+                    TokenType::Bang
+                };
+                self.add_token(token_type, LiteralType::Nil);
+            }
+            '<' => {
+                let token_type = if self.match_char('=') {
+                    TokenType::LessEqual
+                } else {
+                    TokenType::Less
+                };
+                self.add_token(token_type, LiteralType::Nil);
+            }
+            '>' => {
+                let token_type = if self.match_char('=') {
+                    TokenType::GreaterEqual
+                } else {
+                    TokenType::Greater
+                };
+                self.add_token(token_type, LiteralType::Nil);
+            }
             '\n' => self.line += 1,  // increment current line number
             ' ' | '\t' | '\r' => (), // skip whitespaces
             '/' => {
