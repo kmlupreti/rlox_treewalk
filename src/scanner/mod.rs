@@ -1,5 +1,8 @@
+pub mod token;
+pub mod token_type;
 use crate::error::{LoxError, report_error};
-use crate::token::{LiteralType, Token, TokenType};
+use token::Token;
+use token_type::TokenType;
 pub struct Scanner {
     source: Vec<char>,
     tokens: Vec<Token>,
@@ -31,12 +34,8 @@ impl Scanner {
                 report_error(e);
             }
         }
-        self.tokens.push(Token::new(
-            TokenType::Eof,
-            "\0".to_string(),
-            self.line,
-            LiteralType::Nil,
-        ));
+        self.tokens
+            .push(Token::new(TokenType::Eof, "\0".to_string(), self.line));
         if self.has_error {
             Err(())
         } else {
@@ -44,10 +43,9 @@ impl Scanner {
         }
     }
 
-    fn add_token(&mut self, token_type: TokenType, literal: LiteralType) {
+    fn add_token(&mut self, token_type: TokenType) {
         let lexeme = String::from_iter(&self.source[self.start..=self.current_index - 1]);
-        self.tokens
-            .push(Token::new(token_type, lexeme, self.line, literal));
+        self.tokens.push(Token::new(token_type, lexeme, self.line));
     }
     fn advance(&mut self) -> char {
         self.current_index += 1;
@@ -95,7 +93,7 @@ impl Scanner {
         self.advance();
         let matched_string =
             String::from_iter(&self.source[self.start + 1..self.current_index - 1]);
-        self.add_token(TokenType::String, LiteralType::String(matched_string));
+        self.add_token(TokenType::String(matched_string));
         Ok(())
     }
     fn match_digits(&mut self) -> Result<(), LoxError> {
@@ -111,7 +109,7 @@ impl Scanner {
         let matched_number: f64 = String::from_iter(&self.source[self.start..self.current_index])
             .parse()
             .unwrap();
-        self.add_token(TokenType::Number, LiteralType::Number(matched_number));
+        self.add_token(TokenType::Number(matched_number));
         Ok(())
     }
     fn match_keywords(&mut self) -> Result<(), LoxError> {
@@ -139,38 +137,38 @@ impl Scanner {
             "eof" => TokenType::Eof,
             _ => TokenType::Identifier,
         };
-        self.add_token(token_type, LiteralType::Nil);
+        self.add_token(token_type);
         Ok(())
     }
     fn scan_token(&mut self) -> Result<(), LoxError> {
         let c = self.advance();
         match c {
-            '(' => self.add_token(TokenType::LeftParen, LiteralType::Nil),
+            '(' => self.add_token(TokenType::LeftParen),
 
-            ')' => self.add_token(TokenType::RightParen, LiteralType::Nil),
+            ')' => self.add_token(TokenType::RightParen),
 
-            '{' => self.add_token(TokenType::LeftBrace, LiteralType::Nil),
+            '{' => self.add_token(TokenType::LeftBrace),
 
-            '}' => self.add_token(TokenType::Rightbrace, LiteralType::Nil),
+            '}' => self.add_token(TokenType::Rightbrace),
 
-            '.' => self.add_token(TokenType::Dot, LiteralType::Nil),
+            '.' => self.add_token(TokenType::Dot),
 
-            ';' => self.add_token(TokenType::Comma, LiteralType::Nil),
+            ';' => self.add_token(TokenType::Comma),
 
-            ',' => self.add_token(TokenType::Semicolon, LiteralType::Nil),
+            ',' => self.add_token(TokenType::Semicolon),
 
-            '+' => self.add_token(TokenType::Plus, LiteralType::Nil),
+            '+' => self.add_token(TokenType::Plus),
 
-            '-' => self.add_token(TokenType::Minus, LiteralType::Nil),
+            '-' => self.add_token(TokenType::Minus),
 
-            '*' => self.add_token(TokenType::Star, LiteralType::Nil),
+            '*' => self.add_token(TokenType::Star),
             '=' => {
                 let token_type = if self.match_char('=') {
                     TokenType::EqualEqual
                 } else {
                     TokenType::Equal
                 };
-                self.add_token(token_type, LiteralType::Nil);
+                self.add_token(token_type);
             }
             '!' => {
                 let token_type = if self.match_char('=') {
@@ -178,7 +176,7 @@ impl Scanner {
                 } else {
                     TokenType::Bang
                 };
-                self.add_token(token_type, LiteralType::Nil);
+                self.add_token(token_type);
             }
             '<' => {
                 let token_type = if self.match_char('=') {
@@ -186,7 +184,7 @@ impl Scanner {
                 } else {
                     TokenType::Less
                 };
-                self.add_token(token_type, LiteralType::Nil);
+                self.add_token(token_type);
             }
             '>' => {
                 let token_type = if self.match_char('=') {
@@ -194,7 +192,7 @@ impl Scanner {
                 } else {
                     TokenType::Greater
                 };
-                self.add_token(token_type, LiteralType::Nil);
+                self.add_token(token_type);
             }
             '\n' => self.line += 1,  // increment current line number
             ' ' | '\t' | '\r' => (), // skip whitespaces
@@ -205,7 +203,7 @@ impl Scanner {
                         self.current_index += 1
                     }
                 } else {
-                    self.add_token(TokenType::Slash, LiteralType::Nil);
+                    self.add_token(TokenType::Slash);
                 }
             }
             '"' => self.match_string()?,

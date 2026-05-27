@@ -8,7 +8,6 @@ use std::{
 use crate::scanner::Scanner;
 pub mod error;
 pub mod scanner;
-pub mod token;
 pub fn run_file<P>(path: P)
 where
     P: AsRef<Path>,
