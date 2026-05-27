@@ -91,9 +91,7 @@ impl Scanner {
             return Err(LoxError::UnterminatedString { line: self.line });
         }
         self.advance();
-        let matched_string =
-            String::from_iter(&self.source[self.start + 1..self.current_index - 1]);
-        self.add_token(TokenType::String(matched_string));
+        self.add_token(TokenType::String);
         Ok(())
     }
     fn match_digits(&mut self) -> Result<(), LoxError> {
@@ -106,10 +104,7 @@ impl Scanner {
                 self.advance();
             }
         }
-        let matched_number: f64 = String::from_iter(&self.source[self.start..self.current_index])
-            .parse()
-            .unwrap();
-        self.add_token(TokenType::Number(matched_number));
+        self.add_token(TokenType::Number);
         Ok(())
     }
     fn match_keywords(&mut self) -> Result<(), LoxError> {
