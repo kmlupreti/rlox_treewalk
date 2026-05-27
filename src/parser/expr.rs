@@ -24,7 +24,7 @@ impl Expr {
         match &self {
             Self::Literal { value } => value.lexeme(),
             Self::Unary { operator, right } => {
-                format!("( {} {} )", operator.lexeme(), right.accept())
+                format!("({} {})", operator.lexeme(), right.accept())
             }
             Self::Binary {
                 left,
@@ -32,14 +32,14 @@ impl Expr {
                 right,
             } => {
                 format!(
-                    "( {} {} {})",
-                    left.accept(),
+                    "({} {} {})",
                     operator.lexeme(),
+                    left.accept(),
                     right.accept()
                 )
             }
             Self::Grouping { expr } => {
-                format!("( {} )", expr.accept())
+                format!("(group {})", expr.accept())
             }
         }
     }
