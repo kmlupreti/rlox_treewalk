@@ -1,10 +1,10 @@
 use crate::scanner::TokenType;
 use std::fmt::Display;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Token {
-    token_type: TokenType,
-    lexeme: String,
+    pub token_type: TokenType,
+    pub lexeme: String,
     line: usize,
 }
 impl Token {
@@ -14,9 +14,6 @@ impl Token {
             lexeme,
             line,
         }
-    }
-    pub fn lexeme(&self) -> String {
-        self.lexeme.clone()
     }
 }
 impl Display for Token {
