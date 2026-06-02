@@ -1,4 +1,9 @@
-use crate::{error::LoxError, expresssion::Expr, token::Token, token_type::TokenType};
+use crate::{
+    error::{LoxError, report_error},
+    expresssion::Expr,
+    token::Token,
+    token_type::TokenType,
+};
 
 type ParserResult<T> = Result<T, LoxError>;
 
@@ -10,6 +15,16 @@ impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Parser { tokens, current: 0 }
     }
+    pub fn parse(&mut self) -> Result<Expr, ()> {
+        match self.expression() {
+            Ok(expr) => Ok(expr),
+            Err(e) => {
+                report_error(e);
+                Err(())
+            }
+        }
+    }
+
     fn peek(&self) -> &Token {
         &self.tokens[self.current]
     }
@@ -49,6 +64,25 @@ impl Parser {
                 token: self.peek().clone(),
                 msg: error_msg,
             })
+        }
+    }
+    fn sync(&mut self) {
+        self.advance();
+        while !self.is_at_end() {
+            if self.previous().token_type == TokenType::Semicolon {
+                return;
+            };
+            match self.peek().token_type {
+                TokenType::Class
+                | TokenType::Fun
+                | TokenType::Var
+                | TokenType::While
+                | TokenType::For
+                | TokenType::If
+                | TokenType::Return
+                | TokenType::Print => return,
+                _ => continue,
+            }
         }
     }
     fn expression(&mut self) -> ParserResult<Expr> {
@@ -123,10 +157,10 @@ impl Parser {
     fn primary(&mut self) -> ParserResult<Expr> {
         match self.peek().token_type {
             TokenType::False | TokenType::True | TokenType::Nil => Ok(Expr::Literal {
-                value: self.peek().clone(),
+                value: self.advance().clone(),
             }),
             TokenType::Number | TokenType::String => Ok(Expr::Literal {
-                value: self.previous().clone(),
+                value: self.advance().clone(),
             }),
             TokenType::LeftParen => {
                 let expr = Box::new(self.expression()?);
