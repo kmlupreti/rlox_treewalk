@@ -42,9 +42,6 @@ pub fn run_prompt() -> Result<(), ()> {
 fn run(source: String) -> Result<(), ()> {
     let mut scanner = scanner::Scanner::new(source);
     let tokens = scanner.scan_tokens()?;
-    for t in tokens {
-        println!("{}", t);
-    }
     let mut parser = Parser::new(tokens.clone());
     let expr = parser.parse()?;
     println!("parsed: {}", expr.accept());
