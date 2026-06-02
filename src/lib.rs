@@ -2,8 +2,9 @@ use std::{
     fs::File,
     io::{self, BufRead, Read, Write},
     path::Path,
-    process::exit,
 };
+
+use crate::parser::Parser;
 
 pub mod error;
 pub mod expresssion;
@@ -12,7 +13,7 @@ pub mod scanner;
 pub mod token;
 pub mod token_type;
 
-pub fn run_file<P>(path: P)
+pub fn run_file<P>(path: P) -> Result<(), ()>
 where
     P: AsRef<Path>,
 {
@@ -20,9 +21,9 @@ where
     let mut file_content = String::new();
     file.read_to_string(&mut file_content)
         .expect("error reading source file");
-    run(file_content);
+    run(file_content)
 }
-pub fn run_prompt() {
+pub fn run_prompt() -> Result<(), ()> {
     let mut stdin = io::stdin().lock();
     loop {
         print!("> ");
@@ -34,17 +35,18 @@ pub fn run_prompt() {
         if line.is_empty() {
             break;
         }
-        run(line);
+        run(line)?
     }
+    Ok(())
 }
-fn run(source: String) {
+fn run(source: String) -> Result<(), ()> {
     let mut scanner = scanner::Scanner::new(source);
-    match scanner.scan_tokens() {
-        Ok(tokens) => {
-            for t in tokens {
-                println!("{}", t);
-            }
-        }
-        Err(_) => exit(65),
+    let tokens = scanner.scan_tokens()?;
+    for t in tokens {
+        println!("{}", t);
     }
+    let mut parser = Parser::new(tokens.clone());
+    let expr = parser.parse()?;
+    println!("parsed: {}", expr.accept());
+    Ok(())
 }
