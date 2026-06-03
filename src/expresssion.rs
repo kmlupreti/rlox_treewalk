@@ -20,21 +20,26 @@ pub enum Expr {
 }
 
 impl Expr {
-    pub fn accept(&self) -> String {
+    pub fn print_ast(&self) -> String {
         match &self {
             Self::Literal { value } => value.lexeme.clone(),
             Self::Unary { operator, right } => {
-                format!("({} {})", operator.lexeme, right.accept())
+                format!("({} {})", operator.lexeme, right.print_ast())
             }
             Self::Binary {
                 left,
                 operator,
                 right,
             } => {
-                format!("({} {} {})", operator.lexeme, left.accept(), right.accept())
+                format!(
+                    "({} {} {})",
+                    operator.lexeme,
+                    left.print_ast(),
+                    right.print_ast()
+                )
             }
             Self::Grouping { expr } => {
-                format!("(group {})", expr.accept())
+                format!("(group {})", expr.print_ast())
             }
         }
     }
