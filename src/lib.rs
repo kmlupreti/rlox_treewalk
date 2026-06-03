@@ -8,6 +8,7 @@ use crate::parser::Parser;
 
 pub mod error;
 pub mod expresssion;
+pub mod lox_value;
 pub mod parser;
 pub mod scanner;
 pub mod token;
@@ -44,6 +45,6 @@ fn run(source: String) -> Result<(), ()> {
     let tokens = scanner.scan_tokens()?;
     let mut parser = Parser::new(tokens.clone());
     let expr = parser.parse()?;
-    println!("parsed: {}", expr.accept());
+    println!("{:?}", expr.evaluate());
     Ok(())
 }
