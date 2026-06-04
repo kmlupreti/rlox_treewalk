@@ -1,4 +1,14 @@
-use crate::{lox_value::LoxValue, token::Token, token_type::TokenType};
+use std::fmt::Display;
+
+use crate::{
+    error::{
+        LoxError::{self, EvalError},
+        report_error,
+    },
+    lox_value::LoxValue,
+    token::Token,
+    token_type::TokenType,
+};
 
 #[derive(Debug)]
 pub enum Expr {
@@ -18,55 +28,69 @@ pub enum Expr {
         expr: Box<Expr>,
     },
 }
-
-impl Expr {
-    pub fn print_ast(&self) -> String {
+impl Display for Expr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self {
-            Self::Literal { value } => value.lexeme.clone(),
+            Self::Literal { value } => {
+                let value = value.lexeme.clone();
+                write!(f, "{value}")
+            }
             Self::Unary { operator, right } => {
-                format!("({} {})", operator.lexeme, right.print_ast())
+                let operator = operator.lexeme.clone();
+                write!(f, "({operator} {right})")
             }
             Self::Binary {
                 left,
                 operator,
                 right,
             } => {
-                format!(
-                    "({} {} {})",
-                    operator.lexeme,
-                    left.print_ast(),
-                    right.print_ast()
-                )
+                let operator = operator.lexeme.clone();
+                write!(f, "({operator} {left} {right})")
             }
             Self::Grouping { expr } => {
-                format!("(group {})", expr.print_ast())
+                write!(f, "(group {expr})")
             }
         }
     }
-    pub fn evaluate(&self) -> LoxValue {
-        match &self {
+}
+
+impl Expr {
+    pub fn interpret(&self) {
+        match self.evaluate() {
+            Ok(v) => {
+                println!("{:?}", v);
+            }
+            Err(e) => report_error(e),
+        }
+    }
+
+    pub fn evaluate(&self) -> Result<LoxValue, LoxError> {
+        match self {
             Self::Literal { value } => match value.token_type {
-                TokenType::String => {
-                    LoxValue::String((value.lexeme[1..value.lexeme.len() - 1]).to_string())
-                }
-                TokenType::Number => LoxValue::Number(value.lexeme.parse().unwrap()),
-                TokenType::False => LoxValue::Boolean(false),
-                TokenType::True => LoxValue::Boolean(true),
-                _ => LoxValue::Null,
+                TokenType::String => Ok(LoxValue::String(
+                    (value.lexeme[1..value.lexeme.len() - 1]).to_string(),
+                )),
+                TokenType::Number => Ok(LoxValue::Number(value.lexeme.parse().unwrap())),
+                TokenType::False => Ok(LoxValue::Boolean(false)),
+                TokenType::True => Ok(LoxValue::Boolean(true)),
+                _ => Err(LoxError::EvalError {
+                    msg: "Illegal literal value '{value.lexeme}' found",
+                }),
             },
             Self::Unary { operator, right } => {
-                let right = right.evaluate();
+                let right = right.evaluate()?;
                 match operator.token_type {
-                    TokenType::Minus => match right {
-                        LoxValue::Number(n) => LoxValue::Number(-n),
-                        LoxValue::String(s) => LoxValue::Number(-s.parse::<f64>().unwrap()),
-                        _ => LoxValue::Null,
-                    },
+                    TokenType::Minus => {
+                        let n = right.parse_num()?;
+                        Ok(LoxValue::Number(-n))
+                    }
                     TokenType::Bang => match right {
-                        LoxValue::Boolean(b) => LoxValue::Boolean(!b),
-                        _ => LoxValue::Boolean(true),
+                        LoxValue::Boolean(b) => Ok(LoxValue::Boolean(!b)),
+                        _ => Ok(LoxValue::Boolean(true)),
                     },
-                    _ => LoxValue::Null,
+                    _ => Err(EvalError {
+                        msg: "Illegal unary operator '{operator.lexeme' found",
+                    }),
                 }
             }
             Self::Grouping { expr } => expr.evaluate(),
@@ -75,41 +99,42 @@ impl Expr {
                 operator,
                 right,
             } => {
-                let left = left.evaluate();
-                let right = right.evaluate();
+                let left = left.evaluate()?;
+                let right = right.evaluate()?;
                 match operator.token_type {
                     TokenType::Minus => {
-                        if let LoxValue::Number(n1) = left
-                            && let LoxValue::Number(n2) = right
-                        {
-                            LoxValue::Number(n1 - n2)
-                        } else {
-                            LoxValue::Null
-                        }
+                        let n1 = left.parse_num()?;
+                        let n2 = right.parse_num()?;
+                        Ok(LoxValue::Number(n1 - n2))
                     }
                     TokenType::Star => {
-                        if let LoxValue::Number(n1) = left
-                            && let LoxValue::Number(n2) = right
-                        {
-                            LoxValue::Number(n1 * n2)
-                        } else {
-                            LoxValue::Null
-                        }
+                        let n1 = left.parse_num()?;
+                        let n2 = right.parse_num()?;
+                        Ok(LoxValue::Number(n1 * n2))
+                    }
+                    TokenType::Slash => {
+                        let n1 = left.parse_num()?;
+                        let n2 = right.parse_num()?;
+                        Ok(LoxValue::Number(n1 / n2))
                     }
                     TokenType::Plus => {
                         if let LoxValue::Number(n1) = left
                             && let LoxValue::Number(n2) = right
                         {
-                            LoxValue::Number(n1 + n2)
+                            Ok(LoxValue::Number(n1 + n2))
                         } else if let LoxValue::String(s1) = left
-                            && let LoxValue::Number(s2) = right
+                            && let LoxValue::String(s2) = right
                         {
-                            LoxValue::String(format!("{}{}", s1, s2))
+                            Ok(LoxValue::String(format!("{}{}", s1, s2)))
                         } else {
-                            LoxValue::Null
+                            Err(LoxError::EvalError {
+                                msg: "failed to add/concat as operands should be both number or string",
+                            })
                         }
                     }
-                    _ => LoxValue::Null,
+                    _ => Err(LoxError::EvalError {
+                        msg: "Illegal binary operator {operator.lexeme}",
+                    }),
                 }
             }
         }
