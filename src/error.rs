@@ -9,10 +9,10 @@ pub enum LoxError {
 pub fn report_error(e: LoxError) {
     match e {
         LoxError::UnexpectedChar { char, line } => {
-            eprintln!("[line: {}] Unexpected character {:?} found", line, char);
+            eprintln!("[line: {}] unexpected character {:?} found", line, char);
         }
         LoxError::UnterminatedString { line } => {
-            eprintln!("[line: {}] Unterminated string", line);
+            eprintln!("[line: {}] unterminated string", line);
         }
         LoxError::ParseError { token, msg } => {
             if token.token_type == TokenType::Eof {

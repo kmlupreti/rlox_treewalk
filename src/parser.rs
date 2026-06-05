@@ -57,7 +57,6 @@ impl Parser {
         false
     }
     fn consume(&mut self, token_type: TokenType, error_msg: &'static str) -> ParserResult<Token> {
-        println!("consuming {:?}", token_type);
         if self.check(token_type) {
             Ok(self.advance().clone())
         } else {
@@ -166,12 +165,12 @@ impl Parser {
             TokenType::LeftParen => {
                 self.advance();
                 let expr = Box::new(self.expression()?);
-                self.consume(TokenType::RightParen, "Expected ')' after expression")?;
+                self.consume(TokenType::RightParen, "expected ')' after expression")?;
                 Ok(Expr::Grouping { expr })
             }
             _ => Err(LoxError::ParseError {
                 token: self.peek().clone(),
-                msg: "Unexpected token found",
+                msg: "unexpected token found",
             }),
         }
     }

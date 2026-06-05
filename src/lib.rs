@@ -1,8 +1,5 @@
-use std::{
-    fs::File,
-    io::{self, BufRead, Read, Write},
-    path::Path,
-};
+use std::io::{self, BufRead, BufReader, Write};
+use std::{fs::File, path::Path, process::exit};
 
 use crate::parser::Parser;
 
@@ -14,38 +11,57 @@ pub mod scanner;
 pub mod token;
 pub mod token_type;
 
-pub fn run_file<P>(path: P) -> Result<(), ()>
+pub fn run_file<P>(path: P) -> io::Result<()>
 where
     P: AsRef<Path>,
 {
-    let mut file = File::open(path).expect("error opening source file");
-    let mut file_content = String::new();
-    file.read_to_string(&mut file_content)
-        .expect("error reading source file");
-    run(file_content)
-}
-pub fn run_prompt() -> Result<(), ()> {
-    let mut stdin = io::stdin().lock();
-    loop {
-        print!("> ");
-        io::stdout().flush().expect("error flushing stdout");
-        let mut line = String::new();
-        stdin
-            .read_line(&mut line)
-            .expect("error reading line from stdout");
-        if line.is_empty() {
-            break;
+    let file = File::open(path)?;
+    let mut reader = BufReader::new(file);
+    let mut buffer = String::new();
+
+    while reader.read_line(&mut buffer)? > 0 {
+        let mut scanner = scanner::Scanner::new(&buffer);
+        let tokens = match scanner.scan_tokens() {
+            Ok(t) => t,
+            Err(_) => exit(65),
+        };
+        let mut parser = Parser::new(tokens.clone());
+        let expr = match parser.parse() {
+            Ok(e) => e,
+            Err(_) => exit(65),
+        };
+        match expr.interpret() {
+            Ok(_) => (),
+            Err(_) => exit(70),
         }
-        run(line)?
+        buffer.clear();
     }
     Ok(())
 }
-fn run(source: String) -> Result<(), ()> {
-    let mut scanner = scanner::Scanner::new(source);
-    let tokens = scanner.scan_tokens()?;
-    let mut parser = Parser::new(tokens.clone());
-    let expr = parser.parse()?;
-    println!("{expr}");
-    expr.interpret();
+pub fn run_prompt() -> io::Result<()> {
+    let mut stdin = io::stdin().lock();
+    loop {
+        print!("> ");
+        io::stdout().flush()?;
+        let mut line = String::new();
+        stdin.read_line(&mut line)?;
+        if line.is_empty() {
+            break;
+        }
+        let mut scanner = scanner::Scanner::new(&line);
+        let tokens = match scanner.scan_tokens() {
+            Ok(t) => t,
+            Err(_) => exit(65),
+        };
+        let mut parser = Parser::new(tokens.clone());
+        let expr = match parser.parse() {
+            Ok(e) => e,
+            Err(_) => exit(65),
+        };
+        match expr.interpret() {
+            Ok(_) => (),
+            Err(_) => continue,
+        }
+    }
     Ok(())
 }

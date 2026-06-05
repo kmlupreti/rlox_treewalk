@@ -49,12 +49,16 @@ impl Display for Expr {
 }
 
 impl Expr {
-    pub fn interpret(&self) {
+    pub fn interpret(&self) -> Result<(), ()> {
         match self.evaluate() {
             Ok(v) => {
                 println!("{}", v);
+                Ok(())
             }
-            Err(e) => report_error(e),
+            Err(e) => {
+                report_error(e);
+                Err(())
+            }
         }
     }
 
@@ -280,6 +284,8 @@ impl Expr {
                         };
                         Ok(LoxValue::Boolean(n1 <= n2))
                     }
+                    TokenType::EqualEqual => Ok(LoxValue::Boolean(left == right)),
+                    TokenType::BangEqual => Ok(LoxValue::Boolean(left != right)),
                     _ => Err(LoxError::RuntimeError {
                         line,
                         msg: format!("Illegal binary operator '{lexeme}'"),

@@ -12,7 +12,7 @@ pub struct Scanner {
     has_error: bool,
 }
 impl Scanner {
-    pub fn new(source: String) -> Self {
+    pub fn new(source: &String) -> Self {
         let tokens: Vec<Token> = Vec::new();
         Self {
             source: source.chars().collect(),
