@@ -67,7 +67,7 @@ impl Parser {
             })
         }
     }
-    fn sync(&mut self) {
+    fn _sync(&mut self) {
         self.advance();
         while !self.is_at_end() {
             if self.previous().token_type == TokenType::Semicolon {

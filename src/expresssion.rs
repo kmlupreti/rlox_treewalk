@@ -1,14 +1,8 @@
 use std::fmt::Display;
 
-use crate::{
-    error::{
-        LoxError::{self, EvalError},
-        report_error,
-    },
-    lox_value::LoxValue,
-    token::Token,
-    token_type::TokenType,
-};
+use crate::error::LoxError;
+use crate::error::report_error;
+use crate::{lox_value::LoxValue, token::Token, token_type::TokenType};
 
 #[derive(Debug)]
 pub enum Expr {
@@ -58,7 +52,7 @@ impl Expr {
     pub fn interpret(&self) {
         match self.evaluate() {
             Ok(v) => {
-                println!("{:?}", v);
+                println!("{}", v);
             }
             Err(e) => report_error(e),
         }
@@ -73,23 +67,39 @@ impl Expr {
                 TokenType::Number => Ok(LoxValue::Number(value.lexeme.parse().unwrap())),
                 TokenType::False => Ok(LoxValue::Boolean(false)),
                 TokenType::True => Ok(LoxValue::Boolean(true)),
-                _ => Err(LoxError::EvalError {
-                    msg: "Illegal literal value '{value.lexeme}' found",
-                }),
+                TokenType::Nil => Ok(LoxValue::Null),
+                _ => {
+                    let lexeme = value.lexeme.clone();
+                    Err(LoxError::RuntimeError {
+                        line: value.line,
+                        msg: format!("Illegal literal value '{lexeme}' found"),
+                    })
+                }
             },
             Self::Unary { operator, right } => {
+                let lexeme = operator.lexeme.clone();
+                let line = operator.line;
                 let right = right.evaluate()?;
                 match operator.token_type {
                     TokenType::Minus => {
-                        let n = right.parse_num()?;
+                        let n = match parse_num(&right) {
+                            Ok(n) => n,
+                            Err(_) => {
+                                return Err(LoxError::RuntimeError {
+                                    line: operator.line,
+                                    msg: format!("failed to parse '{right}' into number"),
+                                });
+                            }
+                        };
                         Ok(LoxValue::Number(-n))
                     }
                     TokenType::Bang => match right {
                         LoxValue::Boolean(b) => Ok(LoxValue::Boolean(!b)),
                         _ => Ok(LoxValue::Boolean(true)),
                     },
-                    _ => Err(EvalError {
-                        msg: "Illegal unary operator '{operator.lexeme' found",
+                    _ => Err(LoxError::RuntimeError {
+                        line,
+                        msg: format!("Illegal unary operator '{lexeme}' found"),
                     }),
                 }
             }
@@ -101,20 +111,71 @@ impl Expr {
             } => {
                 let left = left.evaluate()?;
                 let right = right.evaluate()?;
-                match operator.token_type {
+                let token_type = operator.token_type;
+                let lexeme = operator.lexeme.clone();
+                let line = operator.line;
+                match token_type {
                     TokenType::Minus => {
-                        let n1 = left.parse_num()?;
-                        let n2 = right.parse_num()?;
+                        let n1 = match parse_num(&left) {
+                            Ok(n) => n,
+                            Err(_) => {
+                                return Err(LoxError::RuntimeError {
+                                    line,
+                                    msg: format!("failed to parse '{left}' into number"),
+                                });
+                            }
+                        };
+                        let n2 = match parse_num(&right) {
+                            Ok(n) => n,
+                            Err(_) => {
+                                return Err(LoxError::RuntimeError {
+                                    line,
+                                    msg: format!("failed to parse '{right}' into number"),
+                                });
+                            }
+                        };
                         Ok(LoxValue::Number(n1 - n2))
                     }
                     TokenType::Star => {
-                        let n1 = left.parse_num()?;
-                        let n2 = right.parse_num()?;
+                        let n1 = match parse_num(&left) {
+                            Ok(n) => n,
+                            Err(_) => {
+                                return Err(LoxError::RuntimeError {
+                                    line,
+                                    msg: format!("failed to parse '{left}' into number"),
+                                });
+                            }
+                        };
+                        let n2 = match parse_num(&right) {
+                            Ok(n) => n,
+                            Err(_) => {
+                                return Err(LoxError::RuntimeError {
+                                    line,
+                                    msg: format!("failed to parse '{right}' into number"),
+                                });
+                            }
+                        };
                         Ok(LoxValue::Number(n1 * n2))
                     }
                     TokenType::Slash => {
-                        let n1 = left.parse_num()?;
-                        let n2 = right.parse_num()?;
+                        let n1 = match parse_num(&left) {
+                            Ok(n) => n,
+                            Err(_) => {
+                                return Err(LoxError::RuntimeError {
+                                    line,
+                                    msg: format!("failed to parse '{left}' into number"),
+                                });
+                            }
+                        };
+                        let n2 = match parse_num(&right) {
+                            Ok(n) => n,
+                            Err(_) => {
+                                return Err(LoxError::RuntimeError {
+                                    line,
+                                    msg: format!("failed to parse '{right}' into number"),
+                                });
+                            }
+                        };
                         Ok(LoxValue::Number(n1 / n2))
                     }
                     TokenType::Plus => {
@@ -127,16 +188,31 @@ impl Expr {
                         {
                             Ok(LoxValue::String(format!("{}{}", s1, s2)))
                         } else {
-                            Err(LoxError::EvalError {
-                                msg: "failed to add/concat as operands should be both number or string",
+                            Err(LoxError::RuntimeError {
+                                line,
+                                msg: format!(
+                                    "failed to add/concat as operands should be both number or string"
+                                ),
                             })
                         }
                     }
-                    _ => Err(LoxError::EvalError {
-                        msg: "Illegal binary operator {operator.lexeme}",
+                    _ => Err(LoxError::RuntimeError {
+                        line,
+                        msg: format!("Illegal binary operator '{lexeme}'"),
                     }),
                 }
             }
         }
+    }
+}
+
+pub fn parse_num(v: &LoxValue) -> Result<f64, ()> {
+    match v {
+        LoxValue::Number(n) => Ok(*n),
+        LoxValue::String(s) => match s.parse::<f64>() {
+            Ok(n) => Ok(n),
+            Err(_) => Err(()),
+        },
+        _ => Err(()),
     }
 }

@@ -1,4 +1,4 @@
-use crate::error::LoxError;
+use std::fmt::Display;
 
 #[derive(Debug, PartialEq)]
 pub enum LoxValue {
@@ -7,19 +7,13 @@ pub enum LoxValue {
     Boolean(bool),
     Null,
 }
-impl LoxValue {
-    pub fn parse_num(&self) -> Result<f64, LoxError> {
+impl Display for LoxValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            LoxValue::Number(n) => Ok(*n),
-            LoxValue::String(s) => match s.parse::<f64>() {
-                Ok(n) => Ok(n),
-                Err(_) => Err(LoxError::EvalError {
-                    msg: "failed to parse string {s} to number",
-                }),
-            },
-            _ => Err(LoxError::EvalError {
-                msg: "failed to parse the value into number",
-            }),
+            LoxValue::Number(n) => write!(f, "{n}"),
+            LoxValue::String(s) => write!(f, "\"{s}\""),
+            LoxValue::Boolean(b) => write!(f, "{b}"),
+            LoxValue::Null => write!(f, "nil"),
         }
     }
 }

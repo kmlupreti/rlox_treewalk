@@ -4,7 +4,7 @@ pub enum LoxError {
     UnexpectedChar { char: char, line: usize },
     ParseError { token: Token, msg: &'static str },
     UnterminatedString { line: usize },
-    EvalError { msg: &'static str },
+    RuntimeError { line: usize, msg: String },
 }
 pub fn report_error(e: LoxError) {
     match e {
@@ -21,8 +21,8 @@ pub fn report_error(e: LoxError) {
                 eprintln!("[line: {}] at '{}' {}", token.line, token.lexeme, msg);
             }
         }
-        LoxError::EvalError { msg } => {
-            eprintln!("{}", msg);
+        LoxError::RuntimeError { line, msg } => {
+            eprintln!("[line: {}] {}", line, msg);
         }
     }
 }
