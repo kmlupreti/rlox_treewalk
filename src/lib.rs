@@ -1,13 +1,15 @@
+use crate::interpreter::Interpreter;
+use crate::parser::Parser;
 use std::io::{self, BufRead, BufReader, Write};
 use std::{fs::File, path::Path, process::exit};
 
-use crate::parser::Parser;
-
 pub mod error;
 pub mod expresssion;
+pub mod interpreter;
 pub mod lox_value;
 pub mod parser;
 pub mod scanner;
+pub mod statement;
 pub mod token;
 pub mod token_type;
 
@@ -25,14 +27,22 @@ where
             Ok(t) => t,
             Err(_) => exit(65),
         };
+
         let mut parser = Parser::new(tokens.clone());
-        let expr = match parser.parse() {
-            Ok(e) => e,
-            Err(_) => exit(65),
+        let statements = match parser.parse() {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("{e}");
+                exit(65)
+            }
         };
-        match expr.interpret() {
+        let interpreter = Interpreter::new(statements);
+        match interpreter.run() {
             Ok(_) => (),
-            Err(_) => exit(70),
+            Err(e) => {
+                eprintln!("{e}");
+                exit(70);
+            }
         }
         buffer.clear();
     }
@@ -54,13 +64,17 @@ pub fn run_prompt() -> io::Result<()> {
             Err(_) => exit(65),
         };
         let mut parser = Parser::new(tokens.clone());
-        let expr = match parser.parse() {
-            Ok(e) => e,
-            Err(_) => exit(65),
+        let statements = match parser.parse() {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("{e}");
+                exit(65)
+            }
         };
-        match expr.interpret() {
+        let interpreter = Interpreter::new(statements);
+        match interpreter.run() {
             Ok(_) => (),
-            Err(_) => continue,
+            Err(e) => eprintln!("{e}"),
         }
     }
     Ok(())
