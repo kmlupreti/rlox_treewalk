@@ -1,8 +1,5 @@
 use crate::{
-    error::{LoxError, report_error},
-    expresssion::Expr,
-    token::Token,
-    token_type::TokenType,
+    error::LoxError, expresssion::Expr, statement::Stmt, token::Token, token_type::TokenType,
 };
 
 type ParserResult<T> = Result<T, LoxError>;
@@ -15,75 +12,31 @@ impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Parser { tokens, current: 0 }
     }
-    pub fn parse(&mut self) -> Result<Expr, ()> {
-        match self.expression() {
-            Ok(expr) => Ok(expr),
-            Err(e) => {
-                report_error(e);
-                Err(())
-            }
+    pub fn parse(&mut self) -> ParserResult<Vec<Stmt>> {
+        let mut statements: Vec<Stmt> = vec![];
+        while !self.is_at_end() {
+            statements.push(self.statement()?);
         }
+        Ok(statements)
     }
 
-    fn peek(&self) -> &Token {
-        &self.tokens[self.current]
-    }
-    fn is_at_end(&self) -> bool {
-        self.peek().token_type == TokenType::Eof
-    }
-    fn previous(&self) -> &Token {
-        &self.tokens[self.current - 1]
-    }
-    fn check(&self, token_type: TokenType) -> bool {
-        if self.is_at_end() {
-            false
+    fn statement(&mut self) -> ParserResult<Stmt> {
+        if self.check(TokenType::Print) {
+            self.print_stmt()
         } else {
-            self.peek().token_type == token_type
+            self.expr_stmt()
         }
     }
-    fn advance(&mut self) -> &Token {
-        if !self.is_at_end() {
-            self.current += 1;
-        }
-        self.previous()
+    fn print_stmt(&mut self) -> ParserResult<Stmt> {
+        self.advance(); // consume print token
+        let expr = self.expression()?;
+        self.consume(TokenType::Semicolon, "expected ';' after value")?;
+        Ok(Stmt::PrintStmt { expr })
     }
-    fn match_types(&mut self, token_types: Vec<TokenType>) -> bool {
-        for tt in token_types {
-            if self.check(tt) {
-                self.advance();
-                return true;
-            }
-        }
-        false
-    }
-    fn consume(&mut self, token_type: TokenType, error_msg: &'static str) -> ParserResult<Token> {
-        if self.check(token_type) {
-            Ok(self.advance().clone())
-        } else {
-            Err(LoxError::ParseError {
-                token: self.peek().clone(),
-                msg: error_msg,
-            })
-        }
-    }
-    fn _sync(&mut self) {
-        self.advance();
-        while !self.is_at_end() {
-            if self.previous().token_type == TokenType::Semicolon {
-                return;
-            };
-            match self.peek().token_type {
-                TokenType::Class
-                | TokenType::Fun
-                | TokenType::Var
-                | TokenType::While
-                | TokenType::For
-                | TokenType::If
-                | TokenType::Return
-                | TokenType::Print => return,
-                _ => continue,
-            }
-        }
+    fn expr_stmt(&mut self) -> ParserResult<Stmt> {
+        let expr = self.expression()?;
+        self.consume(TokenType::Semicolon, "expected ';' after value")?;
+        Ok(Stmt::ExprStmt { expr })
     }
     fn expression(&mut self) -> ParserResult<Expr> {
         self.equality()
@@ -172,6 +125,66 @@ impl Parser {
                 token: self.peek().clone(),
                 msg: "unexpected token found",
             }),
+        }
+    }
+    fn peek(&self) -> &Token {
+        &self.tokens[self.current]
+    }
+    fn is_at_end(&self) -> bool {
+        self.peek().token_type == TokenType::Eof
+    }
+    fn previous(&self) -> &Token {
+        &self.tokens[self.current - 1]
+    }
+    fn check(&self, token_type: TokenType) -> bool {
+        if self.is_at_end() {
+            false
+        } else {
+            self.peek().token_type == token_type
+        }
+    }
+    fn advance(&mut self) -> &Token {
+        if !self.is_at_end() {
+            self.current += 1;
+        }
+        self.previous()
+    }
+    fn match_types(&mut self, token_types: Vec<TokenType>) -> bool {
+        for tt in token_types {
+            if self.check(tt) {
+                self.advance();
+                return true;
+            }
+        }
+        false
+    }
+    fn consume(&mut self, token_type: TokenType, error_msg: &'static str) -> ParserResult<Token> {
+        if self.check(token_type) {
+            Ok(self.advance().clone())
+        } else {
+            Err(LoxError::ParseError {
+                token: self.peek().clone(),
+                msg: error_msg,
+            })
+        }
+    }
+    fn _sync(&mut self) {
+        self.advance();
+        while !self.is_at_end() {
+            if self.previous().token_type == TokenType::Semicolon {
+                return;
+            };
+            match self.peek().token_type {
+                TokenType::Class
+                | TokenType::Fun
+                | TokenType::Var
+                | TokenType::While
+                | TokenType::For
+                | TokenType::If
+                | TokenType::Return
+                | TokenType::Print => return,
+                _ => continue,
+            }
         }
     }
 }
