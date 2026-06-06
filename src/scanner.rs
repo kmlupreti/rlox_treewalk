@@ -1,8 +1,4 @@
-use crate::{
-    error::{LoxError, report_error},
-    token::Token,
-    token_type::TokenType,
-};
+use crate::{error::LoxError, token::Token, token_type::TokenType};
 pub struct Scanner {
     source: Vec<char>,
     tokens: Vec<Token>,
@@ -31,7 +27,7 @@ impl Scanner {
             self.start = self.current_index;
             if let Err(e) = self.scan_token() {
                 self.has_error = true;
-                report_error(e);
+                eprintln!("{e}");
             }
         }
         self.tokens

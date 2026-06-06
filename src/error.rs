@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::{token::Token, token_type::TokenType};
 
 pub enum LoxError {
@@ -6,23 +8,25 @@ pub enum LoxError {
     UnterminatedString { line: usize },
     RuntimeError { line: usize, msg: String },
 }
-pub fn report_error(e: LoxError) {
-    match e {
-        LoxError::UnexpectedChar { char, line } => {
-            eprintln!("[line: {}] unexpected character {:?} found", line, char);
-        }
-        LoxError::UnterminatedString { line } => {
-            eprintln!("[line: {}] unterminated string", line);
-        }
-        LoxError::ParseError { token, msg } => {
-            if token.token_type == TokenType::Eof {
-                eprintln!("[line: {}] at end {}", token.line, msg);
-            } else {
-                eprintln!("[line: {}] at '{}' {}", token.line, token.lexeme, msg);
+impl Display for LoxError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LoxError::UnexpectedChar { char, line } => {
+                write!(f, "[line: {}] unexpected character {:?} found", line, char)
             }
-        }
-        LoxError::RuntimeError { line, msg } => {
-            eprintln!("[line: {}] {}", line, msg);
+            LoxError::UnterminatedString { line } => {
+                write!(f, "[line: {}] unterminated string", line)
+            }
+            LoxError::ParseError { token, msg } => {
+                if token.token_type == TokenType::Eof {
+                    write!(f, "[line: {}] at end {}", token.line, msg)
+                } else {
+                    write!(f, "[line: {}] at '{}' {}", token.line, token.lexeme, msg)
+                }
+            }
+            LoxError::RuntimeError { line, msg } => {
+                write!(f, "[line: {}] {}", line, msg)
+            }
         }
     }
 }

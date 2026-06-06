@@ -1,7 +1,6 @@
 use std::fmt::Display;
 
 use crate::error::LoxError;
-use crate::error::report_error;
 use crate::{lox_value::LoxValue, token::Token, token_type::TokenType};
 
 #[derive(Debug)]
@@ -56,7 +55,7 @@ impl Expr {
                 Ok(())
             }
             Err(e) => {
-                report_error(e);
+                eprintln!("{e}");
                 Err(())
             }
         }
