@@ -12,14 +12,54 @@ impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
         Parser { tokens, current: 0 }
     }
-    pub fn parse(&mut self) -> ParserResult<Vec<Stmt>> {
+    pub fn parse(&mut self) -> Vec<Stmt> {
         let mut statements: Vec<Stmt> = vec![];
         while !self.is_at_end() {
-            statements.push(self.statement()?);
+            statements.push(self.declaration());
         }
-        Ok(statements)
+        statements
+    }
+    fn declaration(&mut self) -> Stmt {
+        let stmt = if self.check(TokenType::Var) {
+            self.var_declaration()
+        } else {
+            self.statement()
+        };
+        match stmt {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("{}", e);
+                self.sync();
+                Stmt::ExprStmt {
+                    expr: Expr::Literal {
+                        value: Token {
+                            token_type: TokenType::Nil,
+                            lexeme: String::new(),
+                            line: self.peek().line,
+                        },
+                    },
+                }
+            }
+        }
     }
 
+    fn var_declaration(&mut self) -> ParserResult<Stmt> {
+        self.advance();
+        let name = self.consume(TokenType::Identifier, "expected variable name")?;
+        let mut initializer = Expr::Literal {
+            value: Token {
+                token_type: TokenType::Nil,
+                lexeme: String::new(),
+                line: self.peek().line,
+            },
+        };
+        if self.check(TokenType::Equal) {
+            self.advance();
+            initializer = self.expression()?;
+        }
+        self.consume(TokenType::Semicolon, "expected ';' after value")?;
+        Ok(Stmt::VarDeclStmt { name, initializer })
+    }
     fn statement(&mut self) -> ParserResult<Stmt> {
         if self.check(TokenType::Print) {
             self.print_stmt()
@@ -121,6 +161,9 @@ impl Parser {
                 self.consume(TokenType::RightParen, "expected ')' after expression")?;
                 Ok(Expr::Grouping { expr })
             }
+            TokenType::Identifier => Ok(Expr::Variable {
+                name: self.advance().clone(),
+            }),
             _ => Err(LoxError::ParseError {
                 token: self.peek().clone(),
                 msg: "unexpected token found",
@@ -168,9 +211,9 @@ impl Parser {
             })
         }
     }
-    fn _sync(&mut self) {
-        self.advance();
+    fn sync(&mut self) {
         while !self.is_at_end() {
+            self.advance();
             if self.previous().token_type == TokenType::Semicolon {
                 return;
             };

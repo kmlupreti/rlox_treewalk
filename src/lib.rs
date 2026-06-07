@@ -3,6 +3,7 @@ use crate::parser::Parser;
 use std::io::{self, BufRead, BufReader, Write};
 use std::{fs::File, path::Path, process::exit};
 
+pub mod environment;
 pub mod error;
 pub mod expresssion;
 pub mod interpreter;
@@ -20,6 +21,7 @@ where
     let file = File::open(path)?;
     let mut reader = BufReader::new(file);
     let mut buffer = String::new();
+    let mut interpreter = Interpreter::new();
 
     while reader.read_line(&mut buffer)? > 0 {
         let mut scanner = scanner::Scanner::new(&buffer);
@@ -29,18 +31,10 @@ where
         };
 
         let mut parser = Parser::new(tokens.clone());
-        let statements = match parser.parse() {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("{e}");
-                exit(65)
-            }
-        };
-        let interpreter = Interpreter::new(statements);
-        match interpreter.interpret() {
+        let statements = parser.parse();
+        match interpreter.interpret(statements) {
             Ok(_) => (),
-            Err(e) => {
-                eprintln!("{e}");
+            Err(_) => {
                 exit(70);
             }
         }
@@ -50,6 +44,7 @@ where
 }
 pub fn run_prompt() -> io::Result<()> {
     let mut stdin = io::stdin().lock();
+    let mut interpreter = Interpreter::new();
     loop {
         print!("> ");
         io::stdout().flush()?;
@@ -64,15 +59,8 @@ pub fn run_prompt() -> io::Result<()> {
             Err(_) => exit(65),
         };
         let mut parser = Parser::new(tokens.clone());
-        let statements = match parser.parse() {
-            Ok(s) => s,
-            Err(e) => {
-                eprintln!("{e}");
-                exit(65)
-            }
-        };
-        let interpreter = Interpreter::new(statements);
-        match interpreter.interpret() {
+        let statements = parser.parse();
+        match interpreter.interpret(statements) {
             Ok(_) => (),
             Err(e) => eprintln!("{e}"),
         }
