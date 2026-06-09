@@ -79,7 +79,20 @@ impl Parser {
         Ok(Stmt::ExprStmt { expr })
     }
     fn expression(&mut self) -> ParserResult<Expr> {
-        self.equality()
+        self.assignment()
+    }
+    fn assignment(&mut self) -> ParserResult<Expr> {
+        if self.check(TokenType::Identifier) && self.check_next(TokenType::Equal) {
+            let name = self.advance().clone();
+            self.advance();
+            let value = self.assignment()?;
+            Ok(Expr::Assign {
+                name,
+                value: Box::new(value),
+            })
+        } else {
+            self.equality()
+        }
     }
     fn equality(&mut self) -> ParserResult<Expr> {
         let mut expr = self.comparision()?;
@@ -173,6 +186,9 @@ impl Parser {
     fn peek(&self) -> &Token {
         &self.tokens[self.current]
     }
+    fn peek_next(&self) -> &Token {
+        &self.tokens[self.current + 1]
+    }
     fn is_at_end(&self) -> bool {
         self.peek().token_type == TokenType::Eof
     }
@@ -184,6 +200,13 @@ impl Parser {
             false
         } else {
             self.peek().token_type == token_type
+        }
+    }
+    fn check_next(&self, token_type: TokenType) -> bool {
+        if self.is_at_end() {
+            false
+        } else {
+            self.peek_next().token_type == token_type
         }
     }
     fn advance(&mut self) -> &Token {
