@@ -23,15 +23,15 @@ impl Interpreter {
                     println!("{expr_out}");
                 }
                 Stmt::VarDeclStmt { name, initializer } => {
-                    self.environment
-                        .define(name.lexeme, self.evaluate(initializer)?);
+                    let value = self.evaluate(initializer)?;
+                    self.environment.define(name.lexeme, value);
                 }
             }
         }
         Ok(())
     }
 
-    pub fn evaluate(&self, expr: Expr) -> Result<LoxValue, LoxError> {
+    pub fn evaluate(&mut self, expr: Expr) -> Result<LoxValue, LoxError> {
         match expr {
             Expr::Literal { value } => match value.token_type {
                 TokenType::String => Ok(LoxValue::String(
@@ -261,13 +261,11 @@ impl Interpreter {
                     }),
                 }
             }
-            Expr::Variable { name } => match self.environment.get(name.lexeme.clone()) {
-                Some(v) => Ok(v.clone()),
-                None => Err(LoxError::RuntimeError {
-                    line: name.line,
-                    msg: format!("unknown variable '{}' found", name.lexeme),
-                }),
-            },
+            Expr::Variable { name } => self.environment.get(name),
+            Expr::Assign { name, value } => {
+                let value = self.evaluate(*value)?;
+                self.environment.redefine(name, value)
+            }
         }
     }
 }
