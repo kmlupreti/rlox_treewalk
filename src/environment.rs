@@ -1,4 +1,4 @@
-use crate::lox_value::LoxValue;
+use crate::{error::LoxError, lox_value::LoxValue, token::Token};
 use std::collections::HashMap;
 
 pub struct Environment {
@@ -13,7 +13,24 @@ impl Environment {
     pub fn define(&mut self, name: String, value: LoxValue) {
         self.values.insert(name, value);
     }
-    pub fn get(&self, name: String) -> Option<&LoxValue> {
-        self.values.get(&name)
+    pub fn get(&self, name: Token) -> Result<LoxValue, LoxError> {
+        match self.values.get(&name.lexeme) {
+            Some(v) => Ok(v.clone()),
+            None => Err(LoxError::RuntimeError {
+                line: name.line,
+                msg: format!("unknown variable '{}' found", name.lexeme),
+            }),
+        }
+    }
+    pub fn redefine(&mut self, name: Token, value: LoxValue) -> Result<LoxValue, LoxError> {
+        if self.values.contains_key(&name.lexeme) {
+            self.define(name.lexeme, value.clone());
+            Ok(value)
+        } else {
+            Err(LoxError::RuntimeError {
+                line: name.line,
+                msg: format!("unknown variable '{}' found", name.lexeme),
+            })
+        }
     }
 }
