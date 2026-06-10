@@ -26,6 +26,13 @@ impl Interpreter {
                     let value = self.evaluate(initializer)?;
                     self.environment.define(name.lexeme, value);
                 }
+                Stmt::BlockStmt { statements } => {
+                    let previous = self.environment.clone();
+                    let new = Environment::new_enclosing(self.environment.clone());
+                    self.environment = new;
+                    self.interpret(statements)?;
+                    self.environment = previous;
+                }
             }
         }
         Ok(())
@@ -264,7 +271,7 @@ impl Interpreter {
             Expr::Variable { name } => self.environment.get(name),
             Expr::Assign { name, value } => {
                 let value = self.evaluate(*value)?;
-                self.environment.redefine(name, value)
+                self.environment.assign(name, value)
             }
         }
     }

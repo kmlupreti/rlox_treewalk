@@ -1,13 +1,22 @@
 use crate::{error::LoxError, lox_value::LoxValue, token::Token};
 use std::collections::HashMap;
 
+#[derive(Clone)]
 pub struct Environment {
     values: HashMap<String, LoxValue>,
+    enclosing: Option<Box<Environment>>,
 }
 impl Environment {
     pub fn new() -> Self {
         Self {
             values: HashMap::new(),
+            enclosing: None,
+        }
+    }
+    pub fn new_enclosing(enclosing: Environment) -> Self {
+        Self {
+            values: HashMap::new(),
+            enclosing: Some(Box::new(enclosing)),
         }
     }
     pub fn define(&mut self, name: String, value: LoxValue) {
@@ -16,21 +25,27 @@ impl Environment {
     pub fn get(&self, name: Token) -> Result<LoxValue, LoxError> {
         match self.values.get(&name.lexeme) {
             Some(v) => Ok(v.clone()),
-            None => Err(LoxError::RuntimeError {
-                line: name.line,
-                msg: format!("undeclared variable '{}' found", name.lexeme),
-            }),
+            None => match self.enclosing {
+                Some(ref env) => env.get(name),
+                None => Err(LoxError::RuntimeError {
+                    line: name.line,
+                    msg: format!("undeclared variable '{}' found", name.lexeme),
+                }),
+            },
         }
     }
-    pub fn redefine(&mut self, name: Token, value: LoxValue) -> Result<LoxValue, LoxError> {
+    pub fn assign(&mut self, name: Token, value: LoxValue) -> Result<LoxValue, LoxError> {
         if self.values.contains_key(&name.lexeme) {
             self.define(name.lexeme, value.clone());
             Ok(value)
         } else {
-            Err(LoxError::RuntimeError {
-                line: name.line,
-                msg: format!("unable to assign to undeclared variable '{}'", name.lexeme),
-            })
+            match self.enclosing {
+                Some(ref mut env) => env.assign(name, value),
+                None => Err(LoxError::RuntimeError {
+                    line: name.line,
+                    msg: format!("unable to assign to undeclared variable '{}'", name.lexeme),
+                }),
+            }
         }
     }
 }
