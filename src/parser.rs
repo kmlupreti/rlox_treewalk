@@ -82,16 +82,23 @@ impl Parser {
         self.assignment()
     }
     fn assignment(&mut self) -> ParserResult<Expr> {
-        if self.check(TokenType::Identifier) && self.check_next(TokenType::Equal) {
-            let name = self.advance().clone();
-            self.advance();
+        let expr = self.equality()?;
+        if self.check(TokenType::Equal) {
+            self.advance(); // consume = 
             let value = self.assignment()?;
-            Ok(Expr::Assign {
-                name,
-                value: Box::new(value),
-            })
+            if let Expr::Variable { name } = expr {
+                Ok(Expr::Assign {
+                    name,
+                    value: Box::new(value),
+                })
+            } else {
+                Err(LoxError::RuntimeError {
+                    line: self.peek().line,
+                    msg: format!("unable to assign to invalid target "),
+                })
+            }
         } else {
-            self.equality()
+            Ok(expr)
         }
     }
     fn equality(&mut self) -> ParserResult<Expr> {
@@ -186,9 +193,6 @@ impl Parser {
     fn peek(&self) -> &Token {
         &self.tokens[self.current]
     }
-    fn peek_next(&self) -> &Token {
-        &self.tokens[self.current + 1]
-    }
     fn is_at_end(&self) -> bool {
         self.peek().token_type == TokenType::Eof
     }
@@ -200,13 +204,6 @@ impl Parser {
             false
         } else {
             self.peek().token_type == token_type
-        }
-    }
-    fn check_next(&self, token_type: TokenType) -> bool {
-        if self.is_at_end() {
-            false
-        } else {
-            self.peek_next().token_type == token_type
         }
     }
     fn advance(&mut self) -> &Token {
