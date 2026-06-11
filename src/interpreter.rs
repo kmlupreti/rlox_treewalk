@@ -53,8 +53,8 @@ impl Interpreter {
                     if is_condition_true {
                         self.interpret(*then_branch)?
                     } else {
-                        if let Some(then_stmt) = else_branch {
-                            self.interpret(*then_stmt)?
+                        if let Some(else_branch) = else_branch {
+                            self.interpret(*else_branch)?
                         }
                     }
                 }
