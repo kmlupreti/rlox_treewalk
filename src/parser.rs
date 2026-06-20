@@ -116,7 +116,7 @@ impl Parser {
         self.assignment()
     }
     fn assignment(&mut self) -> ParserResult<Expr> {
-        let expr = self.equality()?;
+        let expr = self.logic_or()?;
         if self.check(TokenType::Equal) {
             self.advance(); // consume = 
             let value = self.assignment()?;
@@ -133,6 +133,36 @@ impl Parser {
             }
         } else {
             Ok(expr)
+        }
+    }
+    fn logic_or(&mut self) -> ParserResult<Expr> {
+        let left = self.logic_and()?;
+        let operator = self.peek().clone();
+        if self.check(TokenType::Or) {
+            self.advance();
+            let right = Some(Box::new(self.logic_and()?));
+            Ok(Expr::Logical {
+                left: Box::new(left),
+                operator,
+                right,
+            })
+        } else {
+            Ok(left)
+        }
+    }
+    fn logic_and(&mut self) -> ParserResult<Expr> {
+        let left = self.equality()?;
+        let operator = self.peek().clone();
+        if self.check(TokenType::And) {
+            self.advance();
+            let right = Some(Box::new(self.equality()?));
+            Ok(Expr::Logical {
+                left: Box::new(left),
+                operator,
+                right,
+            })
+        } else {
+            Ok(left)
         }
     }
     fn equality(&mut self) -> ParserResult<Expr> {

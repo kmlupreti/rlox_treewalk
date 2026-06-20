@@ -14,6 +14,11 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Logical {
+        left: Box<Expr>,
+        operator: Token,
+        right: Option<Box<Expr>>,
+    },
     Grouping {
         expr: Box<Expr>,
     },

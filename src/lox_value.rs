@@ -17,3 +17,12 @@ impl Display for LoxValue {
         }
     }
 }
+impl LoxValue {
+    pub fn is_true(&self) -> bool {
+        match self {
+            Self::Boolean(b) => *b,
+            Self::Null => false,
+            _ => true,
+        }
+    }
+}

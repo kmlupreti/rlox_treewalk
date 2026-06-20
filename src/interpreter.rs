@@ -99,10 +99,7 @@ impl Interpreter {
                         };
                         Ok(LoxValue::Number(-n))
                     }
-                    TokenType::Bang => match right {
-                        LoxValue::Boolean(b) => Ok(LoxValue::Boolean(!b)),
-                        _ => Ok(LoxValue::Boolean(true)),
-                    },
+                    TokenType::Bang => Ok(LoxValue::Boolean(!right.is_true())),
                     _ => Err(LoxError::RuntimeError {
                         line,
                         msg: format!("Illegal unary operator '{lexeme}' found"),
@@ -298,6 +295,41 @@ impl Interpreter {
             Expr::Assign { name, value } => {
                 let value = self.evaluate(*value)?;
                 self.environment.assign(name, value)
+            }
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => {
+                let left = self.evaluate(*left)?;
+                match operator.token_type {
+                    TokenType::Or => {
+                        if left.is_true() {
+                            Ok(LoxValue::Boolean(true))
+                        } else {
+                            if let Some(right) = right {
+                                Ok(LoxValue::Boolean(self.evaluate(*right)?.is_true()))
+                            } else {
+                                Ok(LoxValue::Boolean(false))
+                            }
+                        }
+                    }
+                    TokenType::And => {
+                        if !left.is_true() {
+                            Ok(LoxValue::Boolean(false))
+                        } else {
+                            if let Some(right) = right {
+                                Ok(LoxValue::Boolean(self.evaluate(*right)?.is_true()))
+                            } else {
+                                Ok(LoxValue::Boolean(true))
+                            }
+                        }
+                    }
+                    _ => Err(LoxError::RuntimeError {
+                        line: operator.line,
+                        msg: format!("'{}' is not a valid logical operator", operator.lexeme),
+                    }),
+                }
             }
         }
     }
