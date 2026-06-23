@@ -1,10 +1,6 @@
 use crate::{
-    environment::Environment,
-    error::LoxError,
-    expresssion::Expr,
-    lox_value::LoxValue::{self, Boolean},
-    statement::Stmt,
-    token_type::TokenType,
+    environment::Environment, error::LoxError, expresssion::Expr, lox_value::LoxValue,
+    statement::Stmt, token_type::TokenType,
 };
 
 pub struct Interpreter {
@@ -30,7 +26,6 @@ impl Interpreter {
                 self.environment.define(name.lexeme, value);
             }
             Stmt::BlockStmt { statements } => {
-                let previous = self.environment.clone();
                 let new = Environment::new_enclosing(self.environment.clone());
                 self.environment = new;
                 let mut result = Ok(());
@@ -40,7 +35,7 @@ impl Interpreter {
                         break;
                     };
                 }
-                self.environment = previous;
+                self.environment = *self.environment.enclosing.clone().unwrap();
                 result?
             }
             Stmt::IfStmt {
@@ -49,7 +44,7 @@ impl Interpreter {
                 else_branch,
             } => {
                 let condition = self.evaluate(condition)?;
-                if let Boolean(is_condition_true) = condition {
+                if let LoxValue::Boolean(is_condition_true) = condition {
                     if is_condition_true {
                         self.interpret(*then_branch)?
                     } else {
@@ -57,6 +52,12 @@ impl Interpreter {
                             self.interpret(*else_branch)?
                         }
                     }
+                }
+            }
+
+            Stmt::WhileStmt { condition, body } => {
+                while self.evaluate(condition.clone())?.is_true() {
+                    self.interpret(*body.clone())?;
                 }
             }
         }
