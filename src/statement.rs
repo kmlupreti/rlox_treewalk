@@ -1,6 +1,6 @@
 use crate::{expresssion::Expr, token::Token};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Stmt {
     ExprStmt {
         expr: Expr,
@@ -19,5 +19,9 @@ pub enum Stmt {
         condition: Expr,
         then_branch: Box<Stmt>,
         else_branch: Option<Box<Stmt>>,
+    },
+    WhileStmt {
+        condition: Expr,
+        body: Box<Stmt>,
     },
 }
