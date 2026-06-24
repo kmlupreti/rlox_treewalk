@@ -69,11 +69,67 @@ impl Parser {
             self.if_stmt()
         } else if self.check(TokenType::While) {
             self.while_stmt()
+        } else if self.check(TokenType::For) {
+            self.for_stmt()
         } else {
             self.expr_stmt()
         }
     }
 
+    fn for_stmt(&mut self) -> ParserResult<Stmt> {
+        self.advance();
+        self.consume(TokenType::LeftParen, "missing '('")?;
+        let initializer = if self.check(TokenType::Var) {
+            Some(self.var_declaration()?)
+        } else if self.check(TokenType::Semicolon) {
+            self.advance();
+            None
+        } else {
+            Some(self.expr_stmt()?)
+        };
+
+        let condition = if !self.check(TokenType::Semicolon) {
+            self.expression()?
+        } else {
+            Expr::Literal {
+                value: Token {
+                    token_type: TokenType::True,
+                    lexeme: "true".to_string(),
+                    line: self.peek().line,
+                },
+            }
+        };
+        self.consume(TokenType::Semicolon, "expected ';'  after loop condition")?;
+        let increment = if !self.check(TokenType::RightParen) {
+            Some(self.expression()?)
+        } else {
+            None
+        };
+        self.consume(TokenType::RightParen, "missing ')'")?;
+        let mut body = self.statement()?;
+        if let Some(increment) = increment {
+            if let Stmt::BlockStmt { mut statements } = body {
+                let increment = Stmt::ExprStmt { expr: increment };
+                statements.push(increment);
+                body = Stmt::BlockStmt { statements };
+            } else {
+                body = Stmt::BlockStmt {
+                    statements: vec![body, Stmt::ExprStmt { expr: increment }],
+                };
+            }
+        }
+        let while_stmt = Stmt::WhileStmt {
+            condition,
+            body: Box::new(body),
+        };
+        if let Some(initializer) = initializer {
+            Ok(Stmt::BlockStmt {
+                statements: vec![initializer, while_stmt],
+            })
+        } else {
+            Ok(while_stmt)
+        }
+    }
     fn while_stmt(&mut self) -> ParserResult<Stmt> {
         self.advance();
         self.consume(TokenType::LeftParen, "missing '('")?;
