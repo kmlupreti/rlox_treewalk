@@ -1,6 +1,6 @@
 use crate::{expresssion::Expr, token::Token};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
     ExprStmt {
         expr: Expr,
@@ -23,5 +23,10 @@ pub enum Stmt {
     WhileStmt {
         condition: Expr,
         body: Box<Stmt>,
+    },
+    FuncStmt {
+        name: Token,
+        params: Vec<Token>,
+        body: Vec<Stmt>,
     },
 }
