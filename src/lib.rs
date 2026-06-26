@@ -3,9 +3,11 @@ use crate::parser::Parser;
 use std::io::{self, BufRead, BufReader, Read, Write};
 use std::{fs::File, path::Path, process::exit};
 
+pub mod callable;
 pub mod environment;
 pub mod error;
 pub mod expresssion;
+pub mod function;
 pub mod interpreter;
 pub mod lox_value;
 pub mod parser;
