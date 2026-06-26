@@ -1,3 +1,4 @@
+use crate::callable::Callable;
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -5,6 +6,7 @@ pub enum LoxValue {
     String(String),
     Number(f64),
     Boolean(bool),
+    Callable(Callable),
     Null,
 }
 impl Display for LoxValue {
@@ -13,6 +15,7 @@ impl Display for LoxValue {
             LoxValue::Number(n) => write!(f, "{n}"),
             LoxValue::String(s) => write!(f, "\"{s}\""),
             LoxValue::Boolean(b) => write!(f, "{b}"),
+            LoxValue::Callable(c) => write!(f, "{:?}", c),
             LoxValue::Null => write!(f, "nil"),
         }
     }
