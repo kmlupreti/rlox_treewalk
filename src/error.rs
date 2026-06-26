@@ -4,7 +4,7 @@ use crate::{token::Token, token_type::TokenType};
 
 pub enum LoxError {
     UnexpectedChar { char: char, line: usize },
-    ParseError { token: Token, msg: &'static str },
+    ParseError { token: Token, msg: String },
     UnterminatedString { line: usize },
     RuntimeError { line: usize, msg: String },
 }
