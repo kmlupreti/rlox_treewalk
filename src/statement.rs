@@ -25,8 +25,8 @@ pub enum Stmt {
         body: Box<Stmt>,
     },
     FuncStmt {
-        name: Token,
-        params: Vec<Token>,
+        name: String,
+        params: Vec<String>,
         body: Vec<Stmt>,
     },
 }
