@@ -93,6 +93,16 @@ impl Interpreter {
                     })),
                 );
             }
+            Stmt::ReturnStmt { keyword, value } => {
+                let value = match value {
+                    Some(expr) => self.evaluate(expr)?,
+                    None => LoxValue::Null,
+                };
+                return Err(LoxError::Return {
+                    line: keyword.line,
+                    value,
+                });
+            }
         }
 
         Ok(())
