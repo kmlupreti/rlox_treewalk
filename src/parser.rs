@@ -64,7 +64,7 @@ impl Parser {
         )?;
         if let Stmt::BlockStmt { statements } = self.block_stmt()? {
             Ok(Stmt::FuncStmt {
-                name,
+                name: name.lexeme,
                 params,
                 body: statements,
             })
@@ -75,12 +75,15 @@ impl Parser {
             })
         }
     }
-    fn parameters(&mut self) -> ParserResult<Vec<Token>> {
+    fn parameters(&mut self) -> ParserResult<Vec<String>> {
         let mut params = vec![];
-        params.push(self.consume(TokenType::Identifier, String::from("expected a parameter"))?);
+        params.push(
+            self.consume(TokenType::Identifier, String::from("expected a parameter"))?
+                .lexeme,
+        );
         while self.check(TokenType::Comma) {
             self.advance();
-            params.push(self.advance().clone());
+            params.push(self.advance().lexeme.clone());
         }
         Ok(params)
     }
