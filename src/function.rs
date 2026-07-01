@@ -1,8 +1,9 @@
-use crate::{statement::Stmt, token::Token};
+use crate::statement::Stmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Function {
-    pub name: Token,
-    pub params: Vec<Token>,
+    pub name: String,
+    pub is_user_defined: bool,
+    pub params: Vec<String>,
     pub body: Vec<Stmt>,
 }
