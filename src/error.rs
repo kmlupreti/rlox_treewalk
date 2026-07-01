@@ -1,6 +1,5 @@
+use crate::{lox_value::LoxValue, token::Token, token_type::TokenType};
 use std::fmt::Display;
-
-use crate::{token::Token, token_type::TokenType};
 
 pub enum LoxError {
     UnexpectedChar { char: char, line: usize },
@@ -8,6 +7,7 @@ pub enum LoxError {
     UnterminatedString { line: usize },
     RuntimeError { line: usize, msg: String },
     MiscError { msg: String },
+    Return { line: usize, value: LoxValue },
 }
 impl Display for LoxError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -30,6 +30,13 @@ impl Display for LoxError {
             }
             LoxError::MiscError { msg } => {
                 write!(f, "{}", msg)
+            }
+            LoxError::Return { line, value: _ } => {
+                write!(
+                    f,
+                    "[line: {}] can't use return outside the function block",
+                    line
+                )
             }
         }
     }
